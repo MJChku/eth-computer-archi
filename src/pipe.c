@@ -9,13 +9,14 @@
 #include "pipe.h"
 #include "shell.h"
 #include "mips.h"
+#include "cache_ins.h"
+#include "cache_data.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
-//#define DEBUG
-
+int stall = 0;
 /* debug */
 void print_op(Pipe_Op *op)
 {
@@ -145,7 +146,7 @@ void pipe_stage_mem()
 
     uint32_t val = 0;
     if (op->is_mem)
-        val = mem_read_32(op->mem_addr & ~3);
+        val = cache_data_read_32(op->mem_addr & ~3);
 
     switch (op->opcode) {
         case OP_LW:
@@ -202,7 +203,7 @@ void pipe_stage_mem()
                 case 3: val = (val & 0x00FFFFFF) | ((op->mem_value & 0xFF) << 24); break;
             }
 
-            mem_write_32(op->mem_addr & ~3, val);
+            cache_write_32(op->mem_addr & ~3, val);
             break;
 
         case OP_SH:
@@ -217,12 +218,12 @@ void pipe_stage_mem()
             printf("new word %08x\n", val);
 #endif
 
-            mem_write_32(op->mem_addr & ~3, val);
+            cache_write_32(op->mem_addr & ~3, val);
             break;
 
         case OP_SW:
             val = op->mem_value;
-            mem_write_32(op->mem_addr & ~3, val);
+            cache_write_32(op->mem_addr & ~3, val);
             break;
     }
 
@@ -674,13 +675,14 @@ void pipe_stage_fetch()
     Pipe_Op *op = malloc(sizeof(Pipe_Op));
     memset(op, 0, sizeof(Pipe_Op));
     op->reg_src1 = op->reg_src2 = op->reg_dst = -1;
-
+    //op->instruction = cache_ins_read_32(pipe.PC);
+    //printf("cache instruction %08x  pc %08x \n", op->instruction, pipe.PC);
     op->instruction = mem_read_32(pipe.PC);
+    printf("instruction %08x \n", op->instruction);
     op->pc = pipe.PC;
     pipe.decode_op = op;
 
     /* update PC */
     pipe.PC += 4;
-
     stat_inst_fetch++;
 }

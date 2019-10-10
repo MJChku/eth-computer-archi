@@ -18,7 +18,8 @@
 
 #include "shell.h"
 #include "pipe.h"
-
+#include "cache_ins.h"
+#include "cache_data.h"
 /***************************************************************/
 /* Statistics.                                                 */
 /***************************************************************/
@@ -363,7 +364,8 @@ void load_program(char *program_filename) {
 /************************************************************/
 void initialize(char *program_filename, int num_prog_files) { 
   int i;
-
+  init_cache_ins();
+  init_cache_data();
   init_memory();
   pipe_init();
   for ( i = 0; i < num_prog_files; i++ ) {
